@@ -63,6 +63,9 @@ protected:
 	// 设置开机自动启动
 	BOOL SetAutoStart(BOOL bStart);
 
+	// 根据虚拟按键获得按键的名称
+	CString VK2Name(WPARAM wp);
+
 	// 键盘按键消息节点
 	struct Node 
 	{

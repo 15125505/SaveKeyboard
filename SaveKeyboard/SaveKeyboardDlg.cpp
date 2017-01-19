@@ -278,7 +278,7 @@ BOOL WINAPI CSaveKeyboardDlg::OnKeyboard(LPVOID lpContext, WPARAM wParam, LPARAM
 			}
 			else if (dwTick - n.dwTick < (DWORD)pThis->m_nTime)
 			{
-				Log2("<%c>键发生了连击，连击时间为：%d毫秒", wParam, dwTick - n.dwTick);
+				Log2("<%s>键发生了连击，连击时间为：%d毫秒", pThis->VK2Name(wParam), dwTick - n.dwTick);
 				return FALSE;
 			}
 		}
@@ -531,5 +531,12 @@ BOOL CSaveKeyboardDlg::SetAutoStart(BOOL bStart)
 	RegCloseKey(hKey);
 	return (ERROR_SUCCESS ==  lRet);
 
+}
+
+CString CSaveKeyboardDlg::VK2Name(WPARAM wp)
+{
+	char   str[100] = {0}; 
+	::GetKeyNameText(::MapVirtualKey(wp, 0) << 16, str, 100); 
+	return str;
 }
 

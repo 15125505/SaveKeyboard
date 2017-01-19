@@ -127,13 +127,13 @@ BEGIN
     BEGIN
         BLOCK "080403a8"
         BEGIN
-            VALUE "CompanyName", "TODO: <公司名>"
-            VALUE "FileDescription", "TODO: <文件说明>"
+            VALUE "CompanyName", "雾影含锋"
+            VALUE "FileDescription", "拯救你的键盘"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "SaveKeyboard.exe"
-            VALUE "LegalCopyright", "TODO: (C) <公司名>。保留所有权利。"
+            VALUE "LegalCopyright", "雾影含锋。保留所有权利。"
             VALUE "OriginalFilename", "SaveKeyboard.exe"
-            VALUE "ProductName", "TODO: <产品名>"
+            VALUE "ProductName", "拯救你的键盘"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
