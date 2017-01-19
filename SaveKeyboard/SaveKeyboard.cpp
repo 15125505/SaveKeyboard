@@ -9,6 +9,8 @@
 #define new DEBUG_NEW
 #endif
 
+extern HWND g_hWnd;
+
 
 // CSaveKeyboardApp
 
@@ -36,6 +38,15 @@ CSaveKeyboardApp theApp;
 BOOL CSaveKeyboardApp::InitInstance()
 {
 	CWinApp::InitInstance();
+
+	// 防止启动多个实例
+	if (NULL != g_hWnd)
+	{
+		::ShowWindow(g_hWnd, SW_SHOW);
+		::ShowWindow(g_hWnd, SW_RESTORE);
+		::SetForegroundWindow(g_hWnd);
+		return FALSE;
+	}
 
 	// 标准初始化
 	// 如果未使用这些功能并希望减小

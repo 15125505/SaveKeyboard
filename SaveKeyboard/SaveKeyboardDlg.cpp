@@ -18,10 +18,10 @@
 #define WM_MSG_NOTIFY WM_USER+1537
 
 
-#pragma data_seg("KeyHook") 
-volatile HWND g_hWnd = NULL;
+#pragma data_seg("SaveKeyboardApp") 
+HWND g_hWnd = NULL;
 #pragma data_seg() 
-
+#pragma comment(linker,"/SECTION:SaveKeyboardApp,RWS")
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
@@ -63,6 +63,7 @@ CSaveKeyboardDlg::CSaveKeyboardDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CSaveKeyboardDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_nTime = 100;
 }
 
 void CSaveKeyboardDlg::DoDataExchange(CDataExchange* pDX)
@@ -81,6 +82,7 @@ BEGIN_MESSAGE_MAP(CSaveKeyboardDlg, CDialog)
 	ON_BN_CLICKED(IDCANCEL, &CSaveKeyboardDlg::OnBnClickedCancel)
 	ON_MESSAGE(WM_MSG_NOTIFY, OnShellNotify)
 	ON_WM_NCPAINT()
+	ON_BN_CLICKED(IDC_AUTO_START, &CSaveKeyboardDlg::OnBnClickedAutoStart)
 END_MESSAGE_MAP()
 
 
@@ -118,10 +120,10 @@ BOOL CSaveKeyboardDlg::OnInitDialog()
 	while (!m_LogRecv.StartReceive(++nPort, LogCallback, this, "127.0.0.1", "", false) && nPort < 2112){}
 	CZLog::SetPort(nPort);
 
-	//用户帮助
-	int nTime = AfxGetApp()->GetProfileInt("Config", "TimeGate", 100);
-	SetDlgItemInt(IDC_TIME, nTime);
-	Log1("连击门限为：%d毫秒", nTime);
+	// 门限设置
+	m_nTime = AfxGetApp()->GetProfileInt("Config", "TimeGate", 150);
+	SetDlgItemInt(IDC_TIME, m_nTime);
+	Log1("连击门限为：%d毫秒", m_nTime);
 
 	// 启动定时器（用于同步日志）
 	SetTimer(1, 100, NULL);
@@ -141,7 +143,16 @@ BOOL CSaveKeyboardDlg::OnInitDialog()
 	// 显示托盘图标
 	Shell_NotifyIcon(NIM_ADD, &m_nid);
 
-	SetTimer(2, 1000, NULL);
+	// 保存当前实例句柄
+	if (NULL == g_hWnd)
+	{
+		g_hWnd = m_hWnd;
+	}
+	else
+	{
+		return TRUE;
+	}
+
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -162,6 +173,7 @@ void CSaveKeyboardDlg::OnSysCommand(UINT nID, LPARAM lParam)
 	if (nID == SC_MINIMIZE)
 	{
 		ShowWindow(SW_HIDE);
+		ShowToolTip("软件将在后台默默进行监控，阻止您的键盘发生连击。", "拯救连击的键盘", 0, 300);
 	}
 }
 
@@ -203,12 +215,31 @@ HCURSOR CSaveKeyboardDlg::OnQueryDragIcon()
 
 void CSaveKeyboardDlg::OnBnClickedOk()
 {
+	int nTime = GetDlgItemInt(IDC_TIME);
+	if (nTime < 1 || nTime > 10000)
+	{
+		AfxMessageBox("请输入合法的时间间隔(1~10000)！", MB_ICONINFORMATION);
+		GetDlgItem(IDC_TIME)->SetFocus();
+		return;
+	}
+	m_nTime = nTime;
+	AfxGetApp()->WriteProfileInt("Config", "TimeGate", m_nTime);
+	Log1("连击门限更新为：%d毫秒", m_nTime);
 }
-
 
 
 void CSaveKeyboardDlg::OnBnClickedCancel()
 {
+	// 窗口可见的时候弹出对话框询问
+	if (IsWindowVisible())
+	{
+		if (AfxMessageBox("确定要退出吗？", MB_OKCANCEL | MB_ICONQUESTION | MB_DEFBUTTON1) == IDCANCEL)
+		{
+			return;
+		}
+	}
+
+	// 停止钩子程序
 	StopHook();
 
 	//退出前删除系统托盘图标
@@ -238,10 +269,18 @@ BOOL WINAPI CSaveKeyboardDlg::OnKeyboard(LPVOID lpContext, WPARAM wParam, LPARAM
 	for (size_t i=0; i<pThis->m_deqKeys.size(); i++)
 	{
 		const Node & n = pThis->m_deqKeys[pThis->m_deqKeys.size() - i - 1];
-		if (wParam == n.wKey && dwTick - n.dwTick < 120)
+		if (wParam == n.wKey)
 		{
-			Log2("<%c>键发生了连击，连击时间为：%d毫秒", wParam, dwTick - n.dwTick);
-			return FALSE;
+			if (dwTick - n.dwTick < 10)
+			{
+				// 在chrome等编辑器中会自动每个键出现两次
+				return TRUE;
+			}
+			else if (dwTick - n.dwTick < (DWORD)pThis->m_nTime)
+			{
+				Log2("<%c>键发生了连击，连击时间为：%d毫秒", wParam, dwTick - n.dwTick);
+				return FALSE;
+			}
 		}
 	}
 
@@ -389,17 +428,6 @@ void CSaveKeyboardDlg::LogCallback(void * lpContext, const void *pData, int nLen
 // 定时器函数，用于同步日志信息
 void CSaveKeyboardDlg::OnTimer(UINT_PTR nIDEvent)
 {
-	if (nIDEvent == 2)
-	{
-		ShowToolTip("这是一个消息", "标题", 0, 100);
-		KillTimer(nIDEvent);
-	}
-	else if (nIDEvent == 3)
-	{
-		CloseToolTip();
-		KillTimer(nIDEvent);
-	}
-
 	AddLog();
 	CDialog::OnTimer(nIDEvent);
 }
@@ -407,18 +435,11 @@ void CSaveKeyboardDlg::OnTimer(UINT_PTR nIDEvent)
 // 系统托盘的消息回调函数
 LRESULT CSaveKeyboardDlg::OnShellNotify(WPARAM wParam, LPARAM lParam)
 {
-	if (lParam == WM_LBUTTONDBLCLK) 
+	if (lParam == WM_LBUTTONDBLCLK || lParam == WM_LBUTTONDOWN) 
 	{
-		if (IsWindowVisible())
-		{
-			ShowWindow(SW_MINIMIZE);
-			ShowWindow(SW_HIDE);
-		}
-		else
-		{
-			ShowWindow(SW_SHOW);
-			ShowWindow(SW_RESTORE);
-		}
+		ShowWindow(SW_SHOW);
+		ShowWindow(SW_RESTORE);
+		SetForegroundWindow();
 	}
 	else if(lParam == WM_RBUTTONDOWN)
 	{
@@ -432,7 +453,6 @@ LRESULT CSaveKeyboardDlg::OnShellNotify(WPARAM wParam, LPARAM lParam)
 // 确保窗口初始化时不显示
 void CSaveKeyboardDlg::OnNcPaint()
 {
-
 	static int i = 2;
 	if(i > 0)
 	{
@@ -448,7 +468,7 @@ void CSaveKeyboardDlg::OnNcPaint()
 // 显示文字提示
 BOOL CSaveKeyboardDlg::ShowToolTip(LPCTSTR szMsg,LPCTSTR szTitle,DWORD dwInfoFlags,UINT uTimeout)
 {
-	m_nid.cbSize=sizeof(NOTIFYICONDATA);
+	m_nid.cbSize = sizeof(NOTIFYICONDATA);
 	m_nid.uFlags = NIF_INFO;
 	m_nid.uVersion = NOTIFYICON_VERSION;
 	m_nid.uTimeout = uTimeout;
@@ -468,12 +488,48 @@ BOOL CSaveKeyboardDlg::CloseToolTip()
 }
 
 
-// todo: 任务栏加入右键提示
-// todo: 图标优化
-// todo: 最小化的时候弹出消息提示
-// todo: 有连击事件时弹出消息提示
-// todo: 允许设置开机自动启动
-// todo: 可以设置连击的时间参数
-// todo: 可以显示键盘被拦截的日志信息，是什么键被拦截，该键和上次输入相差多长时间
-// todo: 退出时警告
-// todo: 保证只启动一个实例
+// 设置开机自动启动
+void CSaveKeyboardDlg::OnBnClickedAutoStart()
+{
+	CButton *pButton = (CButton *)GetDlgItem(IDC_AUTO_START);
+	if (!SetAutoStart(pButton->GetCheck()))
+	{
+		pButton->SetCheck(!pButton->GetCheck());
+		AfxMessageBox("设置软件开机自动启动未能成功。请在保证防火墙不会对本软件的该行为进行拦截的情况下重试。", MB_ICONINFORMATION);
+	}
+}
+
+// 设置是否开机自动启动
+BOOL CSaveKeyboardDlg::SetAutoStart(BOOL bStart)
+{
+	HKEY hKey;
+	LONG lRet = RegOpenKeyEx(HKEY_CURRENT_USER,
+		_T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 
+		0, 
+		KEY_ALL_ACCESS, 
+		&hKey);
+	if (ERROR_SUCCESS != lRet) 
+	{
+		return FALSE;
+	}
+	if (bStart) 
+	{
+		CString str;
+		GetModuleFileName(NULL, str.GetBufferSetLength(_MAX_PATH), _MAX_PATH);
+		str.ReleaseBuffer();
+		lRet = RegSetValueEx(hKey, 
+			_T("ZClock"), 
+			NULL, 
+			REG_SZ, 
+			(LPBYTE)(LPCTSTR)str, 
+			str.GetLength() * sizeof(TCHAR));
+	}
+	else
+	{
+		lRet = RegDeleteValue(hKey, _T("ZClock"));
+	}
+	RegCloseKey(hKey);
+	return (ERROR_SUCCESS ==  lRet);
+
+}
+
