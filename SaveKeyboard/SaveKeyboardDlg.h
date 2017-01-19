@@ -3,6 +3,8 @@
 
 #pragma once
 #include <deque>
+#include "UdpX.h"
+#include <afxmt.h>
 
 
 // CSaveKeyboardDlg 对话框
@@ -28,6 +30,7 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedOk();
@@ -36,6 +39,8 @@ public:
 	// 键盘消息响应事件
 	static BOOL WINAPI OnKeyboard(LPVOID lpContext, WPARAM wParam, LPARAM lParam);
 
+
+	// 键盘按键消息节点
 	struct Node 
 	{
 		WPARAM wKey;
@@ -52,4 +57,40 @@ public:
 		return (DWORD)(count.QuadPart * 1000 / freq.QuadPart);
 	}
 
+	//日志模块
+	CRichEditCtrl m_ctrlLog;
+
+	//待处理日志信息列表
+	struct LogNode 
+	{
+		int nType1;
+		int nType2;
+		CString strLog;
+	};
+	std::vector<LogNode> m_vecLog;
+	CCriticalSection m_csLog;
+
+	//日志接收模块
+	Tool::CUdpX m_LogRecv;
+
+	//添加日志
+	void AddLog();
+
+	//日志信息回调函数
+	static void LogCallback(
+		void * lpContext, 
+		const void *pData, 
+		int nLen, 
+		const char * lpszIP
+		);
+
+	//系统托盘数据
+	NOTIFYICONDATA	m_nid;	
+
+	//系统托盘的消息回调函数
+	LRESULT OnShellNotify(WPARAM wParam, LPARAM lParam);
+
+	afx_msg void OnNcPaint();
+	BOOL ShowToolTip(LPCTSTR szMsg,LPCTSTR szTitle,DWORD dwInfoFlags,UINT uTimeout);
+	BOOL CloseToolTip();
 };

@@ -213,6 +213,14 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\UdpX.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ZLog.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -241,6 +249,14 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\UdpX.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ZLog.h"
 				>
 			</File>
 		</Filter>
