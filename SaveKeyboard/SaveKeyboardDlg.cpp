@@ -81,8 +81,8 @@ BEGIN_MESSAGE_MAP(CSaveKeyboardDlg, CDialog)
 	ON_BN_CLICKED(IDOK, &CSaveKeyboardDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDCANCEL, &CSaveKeyboardDlg::OnBnClickedCancel)
 	ON_MESSAGE(WM_MSG_NOTIFY, OnShellNotify)
-	ON_WM_NCPAINT()
 	ON_BN_CLICKED(IDC_AUTO_START, &CSaveKeyboardDlg::OnBnClickedAutoStart)
+	ON_BN_CLICKED(IDC_SHOW_TIP, &CSaveKeyboardDlg::OnBnClickedShowTip)
 END_MESSAGE_MAP()
 
 
@@ -121,12 +121,13 @@ BOOL CSaveKeyboardDlg::OnInitDialog()
 	CZLog::SetPort(nPort);
 
 	// 门限设置
-	m_nTime = AfxGetApp()->GetProfileInt("Config", "TimeGate", 80);
+	m_nTime = AfxGetApp()->GetProfileInt("Config", "TimeGate", 40);
 	SetDlgItemInt(IDC_TIME, m_nTime);
 	Log1("连击门限为：%d毫秒", m_nTime);
 
-	CButton *pButton = (CButton *)GetDlgItem(IDC_AUTO_START);
-	pButton->SetCheck(IsAutoStart());
+	((CButton *)GetDlgItem(IDC_AUTO_START))->SetCheck(IsAutoStart());
+	((CButton *)GetDlgItem(IDC_SHOW_TIP))->SetCheck(AfxGetApp()->GetProfileInt("Config", "ShowTip", 0));
+
 
 	// 启动定时器（用于同步日志）
 	SetTimer(1, 100, NULL);
@@ -427,6 +428,13 @@ void CSaveKeyboardDlg::LogCallback(void * lpContext, const void *pData, int nLen
 // 定时器函数，用于同步日志信息
 void CSaveKeyboardDlg::OnTimer(UINT_PTR nIDEvent)
 {
+	static BOOL bFirst = TRUE;
+	if (bFirst)
+	{
+		bFirst = FALSE;
+		ShowWindow(SW_SHOWMINIMIZED);
+		ShowWindow(SW_HIDE);
+	}
 	AddLog();
 	CDialog::OnTimer(nIDEvent);
 }
@@ -449,24 +457,13 @@ LRESULT CSaveKeyboardDlg::OnShellNotify(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-// 确保窗口初始化时不显示
-void CSaveKeyboardDlg::OnNcPaint()
-{
-	static int i = 2;
-	if(i > 0)
-	{
-		i --;
-		ShowWindow(SW_HIDE);
-	}
-	else
-	{
-		CDialog::OnNcPaint();
-	}
-}
-
 // 显示文字提示
 BOOL CSaveKeyboardDlg::ShowToolTip(LPCTSTR szMsg,LPCTSTR szTitle,DWORD dwInfoFlags,UINT uTimeout)
 {
+	if (!GetDlgItemInt(IDC_SHOW_TIP))
+	{
+		return TRUE;
+	}
 	m_nid.cbSize = sizeof(NOTIFYICONDATA);
 	m_nid.uFlags = NIF_INFO;
 	m_nid.uVersion = NOTIFYICON_VERSION;
@@ -497,6 +494,13 @@ void CSaveKeyboardDlg::OnBnClickedAutoStart()
 		AfxMessageBox("设置软件开机自动启动未能成功。请在保证防火墙不会对本软件的该行为进行拦截的情况下重试。", MB_ICONINFORMATION);
 	}
 }
+
+void CSaveKeyboardDlg::OnBnClickedShowTip()
+{
+	int nCheck = ((CButton *)GetDlgItem(IDC_SHOW_TIP))->GetCheck();
+	AfxGetApp()->WriteProfileInt("Config", "ShowTip", nCheck);
+}
+
 
 // 设置是否开机自动启动
 BOOL CSaveKeyboardDlg::SetAutoStart(BOOL bStart)
@@ -577,4 +581,5 @@ CString CSaveKeyboardDlg::VK2Name(WPARAM wp)
 	::GetKeyNameText(::MapVirtualKey(wp, 0) << 16, str, 100); 
 	return str;
 }
+
 

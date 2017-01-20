@@ -34,8 +34,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
-	afx_msg void OnNcPaint();
 	afx_msg void OnBnClickedAutoStart();
+	afx_msg void OnBnClickedShowTip();
 
 	// 键盘消息响应事件
 	static BOOL WINAPI OnKeyboard(LPVOID lpContext, WPARAM wParam, LPARAM lParam);

@@ -82,7 +82,7 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSM
 CAPTION "关于 SaveKeyboard"
 FONT 9, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,20,20
     LTEXT           "SaveKeyboard，1.0 版",IDC_STATIC,42,14,114,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2017",IDC_STATIC,42,26,114,8
     DEFPUSHBUTTON   "确定",IDOK,113,41,50,14,WS_GROUP
@@ -97,11 +97,12 @@ BEGIN
     LTEXT           "如果同一个键连续出现的间隔低于",IDC_STATIC,7,9,104,8
     EDITTEXT        IDC_TIME,114,7,35,14,ES_AUTOHSCROLL
     LTEXT           "毫秒时，视作连击。",IDC_STATIC,153,9,63,8
+    CONTROL         "开机自动启动",IDC_AUTO_START,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,22,57,10
+    CONTROL         "显示任务栏通知",IDC_SHOW_TIP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,35,64,10
     DEFPUSHBUTTON   "更新时间间隔",IDOK,98,27,57,14
     PUSHBUTTON      "退出软件",IDCANCEL,163,27,57,14
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,49,213,1
     CONTROL         "",IDC_MSG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | WS_VSCROLL | WS_TABSTOP,7,57,213,137,WS_EX_STATICEDGE
-    CONTROL         "开机自动启动",IDC_AUTO_START,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,28,57,10
 END
 
 
@@ -111,8 +112,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,2
- PRODUCTVERSION 1,0,0,2
+ FILEVERSION 1,0,0,3
+ PRODUCTVERSION 1,0,0,3
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -129,12 +130,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "雾影含锋"
             VALUE "FileDescription", "拯救你的键盘"
-            VALUE "FileVersion", "1.0.0.2"
+            VALUE "FileVersion", "1.0.0.3"
             VALUE "InternalName", "SaveKeyboard.exe"
             VALUE "LegalCopyright", "雾影含锋。保留所有权利。"
             VALUE "OriginalFilename", "SaveKeyboard.exe"
             VALUE "ProductName", "拯救你的键盘"
-            VALUE "ProductVersion", "1.0.0.2"
+            VALUE "ProductVersion", "1.0.0.3"
         END
     END
     BLOCK "VarFileInfo"

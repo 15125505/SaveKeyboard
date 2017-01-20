@@ -23,4 +23,3 @@
 #ifndef _WIN32_IE                       // 指定要求的最低平台是 Internet Explorer 7.0。
 #define _WIN32_IE 0x0700        // 将此值更改为相应的值，以适用于 IE 的其他版本。
 #endif
-

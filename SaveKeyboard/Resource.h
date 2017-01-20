@@ -11,6 +11,8 @@
 #define IDC_MSG                         1002
 #define IDC_CHECK1                      1003
 #define IDC_AUTO_START                  1003
+#define IDC_AUTO_START2                 1004
+#define IDC_SHOW_TIP                    1004
 
 // Next default values for new objects
 // 
