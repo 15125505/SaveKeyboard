@@ -125,9 +125,9 @@ BOOL CSaveKeyboardDlg::OnInitDialog()
 	SetDlgItemInt(IDC_TIME, m_nTime);
 	Log1("连击门限为：%d毫秒", m_nTime);
 
-	((CButton *)GetDlgItem(IDC_AUTO_START))->SetCheck(IsAutoStart());
-	((CButton *)GetDlgItem(IDC_SHOW_TIP))->SetCheck(AfxGetApp()->GetProfileInt("Config", "ShowTip", 0));
-
+	// 设置CheckBox的初始化状态
+	CheckDlgButton(IDC_AUTO_START, IsAutoStart());
+	CheckDlgButton(IDC_SHOW_TIP, AfxGetApp()->GetProfileInt("Config", "ShowTip", 1));
 
 	// 启动定时器（用于同步日志）
 	SetTimer(1, 100, NULL);
@@ -460,7 +460,7 @@ LRESULT CSaveKeyboardDlg::OnShellNotify(WPARAM wParam, LPARAM lParam)
 // 显示文字提示
 BOOL CSaveKeyboardDlg::ShowToolTip(LPCTSTR szMsg,LPCTSTR szTitle,DWORD dwInfoFlags,UINT uTimeout)
 {
-	if (!GetDlgItemInt(IDC_SHOW_TIP))
+	if (!IsDlgButtonChecked(IDC_SHOW_TIP))
 	{
 		return TRUE;
 	}
@@ -497,8 +497,7 @@ void CSaveKeyboardDlg::OnBnClickedAutoStart()
 
 void CSaveKeyboardDlg::OnBnClickedShowTip()
 {
-	int nCheck = ((CButton *)GetDlgItem(IDC_SHOW_TIP))->GetCheck();
-	AfxGetApp()->WriteProfileInt("Config", "ShowTip", nCheck);
+	AfxGetApp()->WriteProfileInt("Config", "ShowTip", IsDlgButtonChecked(IDC_SHOW_TIP));
 }
 
 
