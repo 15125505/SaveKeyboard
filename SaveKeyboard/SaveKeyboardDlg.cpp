@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SaveKeyboard.h"
 #include "SaveKeyboardDlg.h"
-#include "KeyHook.h"
+#include "../KeyHook/KeyHook.h"
 #include "ZLog.h"
 
 #ifdef _DEBUG
