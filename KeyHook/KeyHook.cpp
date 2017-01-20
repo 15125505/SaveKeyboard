@@ -20,7 +20,7 @@ LPVOID g_lpContext = NULL;					// 环境变量
 // 键盘钩子实际处理函数
 LRESULT WINAPI KeyHookProc(int nCode, WPARAM wp, LPARAM lp)
 {
-	if (nCode >= 0 && NULL != g_pfnCallback) 
+	if (nCode == HC_ACTION && NULL != g_pfnCallback) 
 	{
 		if (!g_pfnCallback(g_lpContext, wp, lp))
 		{
@@ -39,7 +39,7 @@ KEYHOOK_API BOOL StartHook(KeyboardCallback pfnCallback, LPVOID lpContext)
 	{
 		return FALSE;
 	}
-	g_hKeyHook = ::SetWindowsHookEx(WH_KEYBOARD, KeyHookProc, g_hMod, 0);
+	g_hKeyHook = ::SetWindowsHookEx(WH_KEYBOARD_LL, KeyHookProc, g_hMod, 0);
 	if (g_hKeyHook == NULL) 
 	{
 		return FALSE;

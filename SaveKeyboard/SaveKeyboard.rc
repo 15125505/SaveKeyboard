@@ -111,8 +111,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 1,0,0,2
+ PRODUCTVERSION 1,0,0,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -129,12 +129,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "雾影含锋"
             VALUE "FileDescription", "拯救你的键盘"
-            VALUE "FileVersion", "1.0.0.1"
+            VALUE "FileVersion", "1.0.0.2"
             VALUE "InternalName", "SaveKeyboard.exe"
             VALUE "LegalCopyright", "雾影含锋。保留所有权利。"
             VALUE "OriginalFilename", "SaveKeyboard.exe"
             VALUE "ProductName", "拯救你的键盘"
-            VALUE "ProductVersion", "1.0.0.1"
+            VALUE "ProductVersion", "1.0.0.2"
         END
     END
     BLOCK "VarFileInfo"

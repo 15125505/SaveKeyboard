@@ -121,9 +121,12 @@ BOOL CSaveKeyboardDlg::OnInitDialog()
 	CZLog::SetPort(nPort);
 
 	// 门限设置
-	m_nTime = AfxGetApp()->GetProfileInt("Config", "TimeGate", 150);
+	m_nTime = AfxGetApp()->GetProfileInt("Config", "TimeGate", 80);
 	SetDlgItemInt(IDC_TIME, m_nTime);
 	Log1("连击门限为：%d毫秒", m_nTime);
+
+	CButton *pButton = (CButton *)GetDlgItem(IDC_AUTO_START);
+	pButton->SetCheck(IsAutoStart());
 
 	// 启动定时器（用于同步日志）
 	SetTimer(1, 100, NULL);
@@ -251,45 +254,41 @@ void CSaveKeyboardDlg::OnBnClickedCancel()
 // 键盘按下的回调函数
 BOOL WINAPI CSaveKeyboardDlg::OnKeyboard(LPVOID lpContext, WPARAM wParam, LPARAM lParam)
 {
-	// 最高两位都是0的，才是键盘按下事件，只处理键盘按下事件
-	if ((lParam >> 30) != 0)
+	CSaveKeyboardDlg *pThis = (CSaveKeyboardDlg *)lpContext;
+	KBDLLHOOKSTRUCT *pkbhs = (KBDLLHOOKSTRUCT *)lParam;  
+	TRACE("键盘事件 -- %08X %s flag=%d scanCode=%d time=%d extra=%d\n", wParam, pThis->VK2Name(pkbhs->vkCode), pkbhs->flags, pkbhs->scanCode, pkbhs->time, pkbhs->dwExtraInfo); // 键盘消息
+
+	// 记录每次按键弹起的时间，如果本次按下的时间，和上次弹起的时间相差太进，那么忽略本次按下
+
+	// 按键弹起的消息，只进行记录，不进行处理
+	if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP)
 	{
+		if (pThis->m_deqKeys.size() > 20)
+		{
+			pThis->m_deqKeys.pop_front();
+		}
+		Node node;
+		node.wKey = pkbhs->vkCode;
+		node.dwTick = pkbhs->time;
+		pThis->m_deqKeys.push_back(node);
 		return TRUE;
 	}
 
-	// 只保留最近的20条按键记录
-	CSaveKeyboardDlg *pThis = (CSaveKeyboardDlg *)lpContext;
-	if (pThis->m_deqKeys.size() > 20)
-	{
-		pThis->m_deqKeys.pop_front();
-	}
-
 	// 检查队列中的内容，如果某个键和上次按下的时间差在制定的时间范围之内，那么视为连击
-	DWORD dwTick = pThis->Tick();
+	DWORD dwCode = pkbhs->vkCode;
+	DWORD dwTick = pkbhs->time;
 	for (size_t i=0; i<pThis->m_deqKeys.size(); i++)
 	{
 		const Node & n = pThis->m_deqKeys[pThis->m_deqKeys.size() - i - 1];
-		if (wParam == n.wKey)
+		if (dwCode == n.wKey)
 		{
-			if (dwTick - n.dwTick < 10)
+			if (dwTick - n.dwTick < (DWORD)pThis->m_nTime)
 			{
-				// 在chrome等编辑器中会自动每个键出现两次
-				return TRUE;
-			}
-			else if (dwTick - n.dwTick < (DWORD)pThis->m_nTime)
-			{
-				Log2("<%s>键发生了连击，连击时间为：%d毫秒", pThis->VK2Name(wParam), dwTick - n.dwTick);
+				Log2("<%s>键发生了连击，连击时间为：%d毫秒", pThis->VK2Name(dwCode), dwTick - n.dwTick);
 				return FALSE;
 			}
 		}
 	}
-
-	// 如果是正常输入，将新的按键加入到队列中
-	Node node;
-	node.wKey = wParam;
-	node.dwTick = dwTick;
-	pThis->m_deqKeys.push_back(node);
-
 	return TRUE;
 }
 
@@ -531,6 +530,45 @@ BOOL CSaveKeyboardDlg::SetAutoStart(BOOL bStart)
 	RegCloseKey(hKey);
 	return (ERROR_SUCCESS ==  lRet);
 
+}
+
+// 检查当前是否开机自动启动
+BOOL CSaveKeyboardDlg::IsAutoStart()
+{
+	HKEY hKey;
+	LONG lRet = RegOpenKeyEx(HKEY_CURRENT_USER,
+		_T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 
+		0, 
+		KEY_ALL_ACCESS, 
+		&hKey);
+	if (ERROR_SUCCESS != lRet) 
+	{
+		return FALSE;
+	}
+	CString str, strPath;
+	DWORD dwType = REG_SZ, dwLength = _MAX_PATH * sizeof(TCHAR);
+	lRet = RegQueryValueEx(hKey, 
+		_T("ZClock"), 
+		NULL, 
+		&dwType, 
+		(LPBYTE)str.GetBufferSetLength(_MAX_PATH), 
+		&dwLength);
+	RegCloseKey(hKey);
+	if (lRet != ERROR_SUCCESS) 
+	{
+		return FALSE;
+	}
+
+	str.ReleaseBuffer();
+	GetModuleFileName(NULL, strPath.GetBufferSetLength(_MAX_PATH), _MAX_PATH);
+	strPath.ReleaseBuffer();
+	strPath.MakeLower();
+	str.MakeLower();
+	if (strPath != str) 
+	{
+		return FALSE;
+	}
+	return TRUE;
 }
 
 CString CSaveKeyboardDlg::VK2Name(WPARAM wp)
