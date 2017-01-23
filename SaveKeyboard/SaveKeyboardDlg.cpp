@@ -277,7 +277,7 @@ BOOL WINAPI CSaveKeyboardDlg::OnKeyboard(LPVOID lpContext, WPARAM wParam, LPARAM
 
 	// 检查队列中的内容，如果某个键和上次按下的时间差在制定的时间范围之内，那么视为连击
 	DWORD dwCode = pkbhs->vkCode;
-	DWORD dwTick = pkbhs->time;
+	DWORD dwTick = pThis->Tick();
 	for (size_t i=0; i<pThis->m_deqKeys.size(); i++)
 	{
 		const Node & n = pThis->m_deqKeys[pThis->m_deqKeys.size() - i - 1];
